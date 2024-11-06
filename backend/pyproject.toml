@@ -1,0 +1,26 @@
+[tool.poetry]
+name = "omega"
+version = "0.1.0"
+description = ""
+authors = ["nisha.chaurasiya <nisha.chaurasiya@os3infotech.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+django = "^3.2"
+djangorestframework = "^3.14"
+django-cors-headers = "^4.0"
+python-dotenv = "^1.0"
+kubernetes = "^26.1"
+django-auth-ldap = "4.0"
+python-ldap = "3.4"
+environs = "10.0"
+drf-yasg = "^1.21.4"
+pyjwt = "^2.9.0"
+paramiko = "^3.5.0"
+pywinrm = "^0.5.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
