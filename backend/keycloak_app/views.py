@@ -3,11 +3,15 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from omega_project.authentication import JWTAuthentication
 from rest_framework.permissions import AllowAny
+import json
+from django.conf import settings
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+import requests
 
 class ProtectedView(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [AllowAny]
-
     def get(self, request):
         # request.user will have the username and roles if authentication is successful
         user_info = request.user
@@ -19,79 +23,57 @@ class ProtectedView(APIView):
             "roles": roles
         }, status=200)
 
+def get_admin_token():
+    url = f"{settings.KEYCLOAK_URL}/realms/{settings.KEYCLOAK_REALM}/protocol/openid-connect/token"
+    data = {
+        "client_id": "omega-admin",
+        "grant_type": "password",
+        "username": "admin",  # Replace with your Keycloak admin username
+        "password": "admin"   # Replace with your Keycloak admin password
+    }
+    print("get data :", data)
+    response = requests.post(url, data=data)
+    return response.json().get("access_token")
 
-
-     
-
-# import requests
-# from django.conf import settings
-# from rest_framework.views import APIView
-# from rest_framework.response import Response
-# from rest_framework import status
-# from rest_framework.permissions import AllowAny
-
-# class KeycloakTokenView(APIView):
-#     permission_classes = [AllowAny]
-
-#     def post(self, request):
-#         data = request.data
-#         try:
-#             response = requests.post(
-#                 f"{settings.KEYCLOAK_SERVER_URL}/realms/{settings.KEYCLOAK_REALM}/protocol/openid-connect/token",
-#                 data={
-#                     'client_id': settings.KEYCLOAK_CLIENT_ID,
-#                     'client_secret': settings.KEYCLOAK_CLIENT_SECRET_KEY,
-#                     'grant_type': 'password',
-#                     'username': data['username'],
-#                     'password': data['password'],
-#                 }
-#             )
-#             response.raise_for_status()
-#             return Response(response.json())
-#         except requests.RequestException as e:
-#             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-# # keycloak_app/views.py
-
-# class KeycloakTokenIntrospectView(APIView):
-#     permission_classes = [AllowAny]
-
-#     def post(self, request):
-#         data = request.data
-#         try:
-#             response = requests.post(
-#                 f"{settings.KEYCLOAK_SERVER_URL}/realms/{settings.KEYCLOAK_REALM}/protocol/openid-connect/token/introspect",
-#                 data={
-#                     'client_id': settings.KEYCLOAK_CLIENT_ID,
-#                     'client_secret': settings.KEYCLOAK_CLIENT_SECRET_KEY,
-#                     'token': data['token'],
-#                 }
-#             )
-#             response.raise_for_status()
-#             return Response(response.json())
-#         except requests.RequestException as e:
-#             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-
-# # keycloak_app/views.py
-
-# class KeycloakLogoutView(APIView):
-#     permission_classes = [AllowAny]
-
-#     def post(self, request):
-#         data = request.data
-#         try:
-#             response = requests.post(
-#                 f"{settings.KEYCLOAK_SERVER_URL}/realms/{settings.KEYCLOAK_REALM}/protocol/openid-connect/logout",
-#                 data={
-#                     'client_id': settings.KEYCLOAK_CLIENT_ID,
-#                     'client_secret': settings.KEYCLOAK_CLIENT_SECRET_KEY,
-#                     'refresh_token': data['refresh_token'],
-#                 }
-#             )
-#             response.raise_for_status()
-#             return Response({'message': 'Successfully logged out'})
-#         except requests.RequestException as e:
-#             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-
+# API view to create a new user in Keycloak
+@csrf_exempt
+def create_keycloak_user(request):
+    if request.method == "POST":
+        # Get the admin token from Keycloak
+        token = get_admin_token()  
+        print("get token :", token)
+        # Set the headers for authentication
+        headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+        # Parse the JSON data from the request body
+        try:
+            data = json.loads(request.body)  # Correct way to parse incoming JSON data
+        except json.JSONDecodeError:
+            return JsonResponse({"error": "Invalid JSON data"}, status=400)
+        # Prepare the payload for the new user creation
+        user_payload = {
+            "username": data.get("username"),
+            "email": data.get("email"),
+            "firstName": data.get("firstName", "DefaultFirstName"),  # Optional field: Add first name
+            "lastName": data.get("lastName", "DefaultLastName"),  # Optional field: Add last name
+            "enabled": True,
+            "credentials": [{
+                "type": "password",
+                "value": data.get("password"),
+                "temporary": False  # Set to False if you do not want the password to be temporary
+            }]
+        }
+        print("user_payload :", user_payload)
+        # Make the request to Keycloak's user creation endpoint
+        response = requests.post(
+            f"{settings.KEYCLOAK_URL}/admin/realms/{settings.KEYCLOAK_REALM}/users",
+            headers=headers,
+            json=user_payload  # Send the payload as JSON
+        )
+        print("response :", response)
+        # Check the response status code and return appropriate response
+        if response.status_code == 201:
+            return JsonResponse({"message": "User created successfully in Keycloak"}, status=201)
+        else:
+            # Print response for debugging
+            print("Error response:", response.text)
+            return JsonResponse({"error": "Failed to create user", "details": response.text}, status=response.status_code)

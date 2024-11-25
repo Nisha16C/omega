@@ -22,7 +22,7 @@ namespace.vue
   const iframeSrc = ref('');
   
   function getIframeSrc(isDark) {
-    const baseSrc = `http://172.16.1.119:3000/d/edspr7pco01kwa/kub-cluster-namespace-details?orgId=1&refresh=1m&from=now-15m&to=now&theme=light&kiosk=1`;
+    const baseSrc = `http://10.0.35.220:3000/d/edspr7pco01kwa/kub-cluster-namespace-details?orgId=1&from=1731450856771&to=1731472456772&theme=light`;
     return baseSrc ;
   }
   

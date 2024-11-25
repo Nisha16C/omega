@@ -1,8 +1,5 @@
- 
 <template>
-   
-  <div class="pr-5 grafana-container">
-    
+  <div class="pr-5">
     <iframe
       :src="iframeSrc"
       width="100%"
@@ -11,36 +8,35 @@
       allowfullscreen
       class="m-5 dashboard-iframe"
     ></iframe>
-    <!-- <div class="overlay"></div> -->
   </div>
 </template>
 
 <script setup>
-import { ref, watch } from 'vue';
-import { useOsTheme } from 'naive-ui';
+import { ref, watch } from "vue";
+import { useOsTheme } from "naive-ui";
 
-const iframeSrc = ref('');
+const iframeSrc = ref("");
 
 function getIframeSrc(isDark) {
-  const baseSrc = `http://172.16.1.119:3000/d/fdongibf4r7r4d/kub-cluster-overview?orgId=1&from=1730766653757&to=1730788253762&theme=light`;
-  
-  
-  return baseSrc ;
+  const baseSrc = `http://10.0.35.220:3000/d/bbfd65c0-2de8-4348-8f61-9b1fb2981ed1/kub-cluster-container-details?orgId=1&from=1731450716196&to=1731472316197&theme=light`;
+
+  return baseSrc;
 }
 
 const osTheme = useOsTheme();
-iframeSrc.value = getIframeSrc(osTheme.value === 'dark');
+iframeSrc.value = getIframeSrc(osTheme.value === "dark");
 
 watch(
   () => osTheme.value,
   (newTheme) => {
-    iframeSrc.value = getIframeSrc(newTheme === 'dark');
+    iframeSrc.value = getIframeSrc(newTheme === "dark");
   }
 );
 </script>
 
 <style scoped>
-html, body {
+html,
+body {
   height: 100%;
   margin: 0;
 }
@@ -80,17 +76,5 @@ html, body {
   padding: 10px;
   border-radius: 8px;
   z-index: 2;
-}
-.grafana-container {
-  position: relative;
-}
-.overlay {
-  position: absolute;
-  top: 0; /* Adjust to cover only the unwanted parts */
-  left: 0;
-  width: 100%;
-  height: 60px; /* Adjust height based on what you want to hide */
-  background: white; /* Or match your app's background */
-  z-index: 1;
 }
 </style>

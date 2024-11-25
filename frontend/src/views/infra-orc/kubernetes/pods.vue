@@ -21,7 +21,7 @@
   const iframeSrc = ref('');
   
   function getIframeSrc(isDark) {
-    const baseSrc = `http://172.16.1.119:3000/d/fdosa87zvaarka/kub-cluster-pod-details?orgId=1&from=now-15m&to=now&theme=light&kiosk=1`;
+    const baseSrc = `http://10.0.35.220:3000/d/fdosa87zvaarka/kub-cluster-pod-details?orgId=1&from=1731451148176&to=1731472748176&theme=light`;
     return baseSrc ;
   }
   

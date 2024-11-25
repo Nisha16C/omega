@@ -1,8 +1,9 @@
 from django.contrib import admin
-from .models import User,LDAPGroup,LDAPGroupMember,ADGroupRoleAssignment
+from .models import User ,KeycloakUser, Agent
 
 admin.site.register(User)
-admin.site.register(LDAPGroup)
-admin.site.register(LDAPGroupMember)
-admin.site.register(ADGroupRoleAssignment)
+admin.site.register(KeycloakUser) 
+admin.site.register(Agent) 
+
+
 

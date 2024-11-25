@@ -1,14 +1,15 @@
-import { resolve } from 'node:path'
-import { defineConfig, loadEnv } from 'vite'
-import { createVitePlugins } from './build/plugins'
-import { createViteProxy } from './build/proxy'
-import { serviceConfig } from './service.config'
+import { resolve } from 'node:path';
+import { defineConfig, loadEnv } from 'vite';
+import { createVitePlugins } from './build/plugins';
+import { createViteProxy } from './build/proxy';
+import { serviceConfig } from './service.config';
+import fs from 'fs'; // Import fs for reading SSL certificates
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
-  // 根据当前工作目录中的 `mode` 加载 .env 文件
-  const env = loadEnv(mode, __dirname, '') as ImportMetaEnv
-  const envConfig = serviceConfig[mode as ServiceEnvType]
+  // Load the .env file based on the current mode
+  const env = loadEnv(mode, __dirname, '') as ImportMetaEnv;
+  const envConfig = serviceConfig[mode as ServiceEnvType];
 
   return {
     base: env.VITE_BASE_URL,
@@ -20,12 +21,15 @@ export default defineConfig(({ mode }) => {
     },
     server: {
       host: '0.0.0.0',
-      proxy:
-        env.VITE_HTTP_PROXY === 'Y' ? createViteProxy(envConfig) : undefined,
+      proxy: env.VITE_HTTP_PROXY === 'Y' ? createViteProxy(envConfig) : undefined,
+      https: {
+        key: fs.readFileSync('./key.pem'), // Path to your private key file
+        cert: fs.readFileSync('./cert.pem'), // Path to your certificate file
+      },
     },
     build: {
       target: 'esnext',
-      reportCompressedSize: false, // 启用/禁用 gzip 压缩大小报告
+      reportCompressedSize: false, // Enable/Disable gzip compressed size reporting
     },
     optimizeDeps: {
       include: ['echarts', 'md-editor-v3', 'quill'],
@@ -37,5 +41,5 @@ export default defineConfig(({ mode }) => {
         },
       },
     },
-  }
-})
+  };
+});

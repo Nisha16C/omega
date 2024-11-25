@@ -5,6 +5,11 @@ import IconBookOpen from '~icons/icon-park-outline/book-open'
 import IconGithub from '~icons/icon-park-outline/github'
 import IconLogout from '~icons/icon-park-outline/logout'
 import IconUser from '~icons/icon-park-outline/user'
+import {useKeycloak} from '@/plugins/keycloak.js'
+import IconAddUser from '~icons/icon-park-outline/add-user' // Add an icon for creating a new user
+import {UI_URL} from "/home/ubuntu/omega-code/frontend/api-config.js";
+
+
 
 const { t } = useI18n()
 
@@ -22,30 +27,17 @@ const options = computed(() => {
       type: 'divider',
       key: 'd1',
     },
-    // {
-    //   label: 'Github',
-    //   key: 'guthub',
-    //   icon: () => h(IconGithub),
-    // },
-    // {
-    //   label: 'Gitee',
-    //   key: 'gitee',
-    //   icon: renderIcon('simple-icons:gitee'),
-    // },
-    // {
-    //   label: 'Docs',
-    //   key: 'docs',
-    //   icon: () => h(IconBookOpen),
-    // },
     {
       type: 'divider',
       key: 'd1',
     },
+    { type: 'divider', key: 'd3' },
     {
       label: t('app.loginOut'),
       key: 'loginOut',
       icon: () => h(IconLogout),
     },
+    
   ]
 })
 function handleSelect(key: string | number) {
@@ -56,7 +48,7 @@ function handleSelect(key: string | number) {
       positiveText: t('common.confirm'),
       negativeText: t('common.cancel'),
       onPositiveClick: () => {
-        logout()
+        logoutFromUIAndKeycloak();
       },
     })
   }
@@ -72,6 +64,25 @@ function handleSelect(key: string | number) {
   if (key === 'docs')
     window.open('https://nova-admin-docs.pages.dev/')
 }
+
+function logoutFromUIAndKeycloak() {
+  // Call the UI logout (your store's logout function)
+  console.log("Logging out from the UI...");
+  logout();
+  console.log("User has been logged out from the frontend.");
+
+  // Call Keycloak logout
+  const keycloak = useKeycloak(); // Assuming you have a Keycloak store or service
+  console.log("Initiating Keycloak logout...");
+  keycloak.logout({
+    redirectUri: `${UI_URL}`,  // Redirect the user to the desired page after Keycloak logout
+  }).then(() => {
+    console.log("User has been logged out from Keycloak.");
+  }).catch(error => {
+    console.error("Error logging out from Keycloak:", error);
+  });
+}
+
 </script>
 
 <template>

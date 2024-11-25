@@ -14,8 +14,8 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 #LDAP Configurations
-import ldap
-from django_auth_ldap.config import LDAPSearch, GroupOfNamesType
+# import ldap
+# from django_auth_ldap.config import LDAPSearch, GroupOfNamesType
 from environs import Env
 
 
@@ -41,7 +41,7 @@ DEBUG = env.bool("DEBUG", default=False)
 
 # DEBUG = True
 
-ALLOWED_HOSTS = ['172.16.1.190','localhost', '172.16.1.158', '172.16.1.190']
+ALLOWED_HOSTS = ['172.16.1.56','localhost', '172.16.1.158', '10.0.34.138']
 
 
 # Application definition
@@ -57,10 +57,10 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'userAuth_app',
-    'rule__api',
-    'ADSapp',
+    'server_bootstrapping',
     'drf_yasg',
     'keycloak_app',
+    'django_extensions'
 
 
 
@@ -69,13 +69,12 @@ INSTALLED_APPS = [
 AUTH_USER_MODEL = 'userAuth_app.User'
 
 REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': [
+        'userAuth_app.permissions.KeycloakIDPermission',  # Use your custom permission class globally
+    ],
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',
-        # 'keycloak_app.authentication.JWTAuthentication',
     ],
-    'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.IsAuthenticated',
-    ),
 }
 
 MIDDLEWARE = [
@@ -90,6 +89,9 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
+    'omega_project.middleware.KeycloakIDAuthenticationMiddleware',
+
+
 ]
 
 ROOT_URLCONF = 'omega_project.urls'
@@ -149,46 +151,12 @@ AUTHENTICATION_BACKENDS = [
     # 'keycloak_app.backends.KeycloakAuthorizationCodeBackend'
 ]
 
-KEYCLOAK_CONFIG = {
-    'REALM': 'master',
-    'SERVER_URL': 'http://172.16.1.158:8080',
-    'CLIENT_ID': 'account',  # Replace with your actual client ID
-}
 
-# KEYCLOAK_SERVER_URL = "http://172.16.1.158:8080"
-# KEYCLOAK_REALM = "aastha-relm"
-# KEYCLOAK_CLIENT_ID = "aastha-client"
-# KEYCLOAK_CLIENT_SECRET_KEY = "QkJ2VxJQr5Xj0LAttatRtGl2Q3lPdCJ7"
-# KEYCLOAK_AUTO_OPENID = True
+KEYCLOAK_URL = "https://10.0.34.141:8443"
+KEYCLOAK_REALM = "nisha-omega"
+KEYCLOAK_CLIENT_ID = "omega"
 
 
-
-
-IS_CONNNECTED = 'True  '
- 
-ldapGroupSearch = 'CN=Users,DC=os3,DC=com   '
- 
- 
-AUTH_LDAP_SERVER_URI = 'ldap://10.0.0.2:389'
-AUTH_LDAP_BIND_DN = 'CN=Administrator,CN=Users,DC=os3,DC=com'
-AUTH_LDAP_BIND_PASSWORD = 'P@33w0rd'
-AUTH_LDAP_USER_SEARCH = LDAPSearch(
-    ldapGroupSearch,  # Use ldapGroupSearchBase here
-    ldap.SCOPE_SUBTREE,
-    "(sAMAccountName=%(user)s)"
-)
- 
-AUTH_LDAP_GROUP_SEARCH = LDAPSearch("CN=Users,DC=example,DC=com", ldap.SCOPE_SUBTREE, "(objectClass=group)")
-AUTH_LDAP_GROUP_TYPE = GroupOfNamesType(name_attr="cn")
- 
-AUTH_LDAP_USER_ATTR_MAP = {
-    "first_name": "giveName",
-    "last_name": "sn",
-    "email": "mail"
-}
-
-
- 
 
 
 # Internationalization
@@ -204,8 +172,8 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 CORS_ALLOWED_ORIGINS = [
+    
     "http://localhost:9980",
-    "http://172.16.1.190:3000" ,
-    "http://172.16.1.190:9980"   
+    "https://10.0.34.138:9980"   
 
 ]

@@ -87,7 +87,7 @@ const resetForm = () => {
 const submitForm = async () => {
   isLoading.value = true;
   try {
-    const response = await axios.post('http://172.16.1.190:8000/api/v3/OnboardGitlab/', accountData.value);
+    const response = await axios.post('http://172.16.1.56:8000/api/v3/OnboardGitlab/', accountData.value);
     message.success('Bootstrapping is successful');
     console.log("API RESPONSE", response);
   } catch (error) {

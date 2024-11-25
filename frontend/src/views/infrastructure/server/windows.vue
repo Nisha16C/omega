@@ -71,7 +71,7 @@ const submitForm = async () => {
   successMessage.value = '';
   errorMessage.value = '';
   try {
-    const response = await axios.post('http://172.16.1.190:8000/api/v3/onboardWindow/', accountData.value);
+    const response = await axios.post('http://172.16.1.56:8000/api/v3/onboardWindow/', accountData.value);
     successMessage.value = 'Bootstrapping is successful';
     message.success(successMessage.value);
   } catch (error) {

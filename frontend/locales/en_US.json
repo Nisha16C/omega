@@ -13,7 +13,7 @@
     "loginOut": "Login out",
     "loginOutContent": "Confirm to log out of current account?",
     "loginOutTitle": "Sign out",
-    "userCenter": "Personal center",
+    "userCenter": "Create New User",
     "light": "Light",
     "dark": "Dark",
     "system": "System",
@@ -126,7 +126,7 @@
     "permission": "Permissions",
     "permissionDemo": "Permissions example",
     "setting": "System settings",
-    "userCenter": "Personal center",
+    "userCenter": "Create New User",
     "accountSetting": "User settings",
     "cascader": "Administrative region selection",
     "dict": "Dictionary example"
