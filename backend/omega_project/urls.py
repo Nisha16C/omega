@@ -22,7 +22,6 @@ schema_view = get_schema_view(
 )
 urlpatterns = [
     path("api/v1/", include('userAuth_app.urls')),
-    path("api/v1/", include('keycloak_app.urls')),
     path('admin/', admin.site.urls),
     path("api/v1/", include('server_bootstrapping.urls')),  # Include your app's URLs here
     path("", include('userAuth_app.urls')),  # Include your app's URLs here

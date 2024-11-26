@@ -10,7 +10,6 @@ from django.contrib.auth import authenticate, login
 import requests
 from django.http import JsonResponse
 from paramiko import SSHClient, AutoAddPolicy, SSHException
-from omega_project.authentication import JWTAuthentication
 
 from rest_framework.permissions import AllowAny
  
@@ -30,7 +29,7 @@ def save_private_key_to_file(private_key_content):
 
  
 class OnboardViewSet(viewsets.ModelViewSet):
-    authentication_classes = [JWTAuthentication]
+    
     permission_classes = [AllowAny]
  
     def create(self, request):
@@ -89,7 +88,7 @@ class OnboardViewSet(viewsets.ModelViewSet):
 
  
 class OnboardViewSetGitlab(viewsets.ModelViewSet):
-    authentication_classes = [JWTAuthentication]
+    
     permission_classes = [AllowAny]
  
     def create(self, request):
@@ -154,7 +153,7 @@ class OnboardViewSetGitlab(viewsets.ModelViewSet):
            
 
 class OnboardViewSetkubernetes(viewsets.ModelViewSet):
-    authentication_classes = [JWTAuthentication]
+    
     permission_classes = [AllowAny]
  
     def create(self, request):
@@ -219,7 +218,7 @@ import winrm
 
 
 class OnboardWindow(viewsets.ModelViewSet):
-    authentication_classes = [JWTAuthentication]
+    
     permission_classes = [AllowAny]
  
     def create(self, request):

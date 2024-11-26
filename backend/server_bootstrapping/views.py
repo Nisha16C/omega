@@ -7,7 +7,6 @@ from rest_framework.authtoken.models import Token
 import requests
 from django.http import JsonResponse
 from paramiko import SSHClient, AutoAddPolicy, SSHException
-from omega_project.authentication import JWTAuthentication
 from rest_framework.permissions import AllowAny
 from winrm.protocol import Protocol
 from requests.exceptions import HTTPError, RequestException
@@ -24,7 +23,7 @@ def save_private_key_to_file(private_key_content):
     return private_key_file_path
 
 class OnboardViewSet(viewsets.ModelViewSet):
-    authentication_classes = [JWTAuthentication]
+    
     permission_classes = [AllowAny]
     def create(self, request):
         try:
@@ -70,7 +69,7 @@ class OnboardViewSet(viewsets.ModelViewSet):
 
 ## For gitlab server bootstraping ##
 class OnboardViewSetGitlab(viewsets.ModelViewSet):
-    authentication_classes = [JWTAuthentication]
+    
     permission_classes = [AllowAny]
     def create(self, request):
         try:
@@ -120,7 +119,7 @@ class OnboardViewSetGitlab(viewsets.ModelViewSet):
 
 ## For k8s server bootstraping ##
 class OnboardViewSetkubernetes(viewsets.ModelViewSet):
-    authentication_classes = [JWTAuthentication]
+    
     permission_classes = [AllowAny]
     def create(self, request):
         try:
@@ -160,7 +159,7 @@ class OnboardViewSetkubernetes(viewsets.ModelViewSet):
             return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
 class OnboardWindow(viewsets.ModelViewSet):
-    authentication_classes = [JWTAuthentication]
+    
     permission_classes = [AllowAny]
     def create(self, request):
         try:

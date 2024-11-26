@@ -16,7 +16,8 @@ urlpatterns = [
     path('save-keycloak-user/', views.save_keycloak_user, name='save_keycloak_user'),
     path('agents/', AgentAPIView.as_view(), name='agent_list_create'),  # List & Create
     path('agents/<int:pk>/', AgentAPIView.as_view(), name='agent_detail'),  # Retrieve, Update & Delete
-    path('list/', list_users, name='list-users'),
+    path('users/', UserListAPIView.as_view(), name='user_list'),
+    path('create-keycloak-user/', views.create_keycloak_user, name='create_keycloak_user'),
 
 ]
 

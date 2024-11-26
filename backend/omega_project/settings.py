@@ -59,7 +59,6 @@ INSTALLED_APPS = [
     'userAuth_app',
     'server_bootstrapping',
     'drf_yasg',
-    'keycloak_app',
     'django_extensions'
 
 
@@ -69,18 +68,17 @@ INSTALLED_APPS = [
 AUTH_USER_MODEL = 'userAuth_app.User'
 
 REST_FRAMEWORK = {
-    'DEFAULT_PERMISSION_CLASSES': [
-        'userAuth_app.permissions.KeycloakIDPermission',  # Use your custom permission class globally
-    ],
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',
+        'userAuth_app.authentication.KeycloakIDAuthentication',
     ],
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
 }
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    # 'keycloak_app.middleware.KeycloakMiddleware',
-
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -89,7 +87,6 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
-    'omega_project.middleware.KeycloakIDAuthenticationMiddleware',
 
 
 ]
@@ -148,7 +145,6 @@ AUTH_PASSWORD_VALIDATORS = [
 AUTHENTICATION_BACKENDS = [
     # 'django_auth_ldap.backend.LDAPBackend',
     'django.contrib.auth.backends.ModelBackend',
-    # 'keycloak_app.backends.KeycloakAuthorizationCodeBackend'
 ]
 
 

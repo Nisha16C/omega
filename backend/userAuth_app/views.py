@@ -5,11 +5,13 @@ from rest_framework.response import Response
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
 import json
+from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
 from .models import Agent, KeycloakUser
 from django.shortcuts import get_object_or_404
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework import permissions
+from django.http import JsonResponse
 from drf_yasg import openapi
 from rest_framework.views import APIView
 from rest_framework import status
@@ -23,6 +25,11 @@ from drf_yasg.utils import swagger_auto_schema
 from .models import KeycloakUser
 from rest_framework.permissions import AllowAny
 from .models import Agent
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from .models import KeycloakUser
 
 
 
@@ -100,31 +107,24 @@ def save_keycloak_user(request):
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-from .permissions import KeycloakIDPermission
 
-
-@api_view(['GET'])
-@permission_classes([AllowAny])
-@permission_classes([KeycloakIDPermission])
-def list_users(request):
-    """
-    API to list all users' information.
-    Only accessible if the user is validated using the `keycloak_id`.
-    """
-    print("Inside list_users API - User validated with keycloak_id:", getattr(request, 'username', None))  # Print user from request after validation
-    
-    try:
-        # Fetch all users from the database
-        users = KeycloakUser.objects.all().values(
-            'keycloak_id', 'username', 'email', 'nickname', 'roles'
-        )
-        print(f"Fetched {len(users)} users from the database.")  # Print number of users fetched
-        return Response({"users": list(users)}, status=200)
-    except Exception as e:
-        print(f"Error fetching users: {str(e)}")  # Print error if something goes wrong
-        return Response({"error": str(e)}, status=500)
-
-
+class UserListAPIView(APIView):
+    # permission_classes = [IsAuthenticated]  # Use custom permission classes
+    def get(self, request):
+        # Fetch all users from KeycloakUser model
+        users = KeycloakUser.objects.all()
+        # Prepare data to return
+        user_data = [
+            {
+                "id": user.id,
+                "username": user.username,
+                "email": user.email,
+                "nickname": user.nickname,
+                "roles": user.roles,
+            }
+            for user in users
+        ]
+        return Response(user_data)
 
 
  
@@ -183,7 +183,72 @@ class AgentAPIView(APIView):
         agent.delete()
         return Response({'message': 'Agent deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
  
- 
+
+
+
+def get_admin_token():
+    url = f"{settings.KEYCLOAK_URL}/realms/{settings.KEYCLOAK_REALM}/protocol/openid-connect/token"
+    data = {
+        "client_id": "omega-admin",
+        "grant_type": "password",
+        "username": "admin",  # Replace with your Keycloak admin username
+        "password": "admin"   # Replace with your Keycloak admin password
+    }
+    print("get data :", data)
+    response = requests.post(url, data=data)
+    return response.json().get("keycloak_id")
+
+
+# API view to create a new user in Keycloak
+@csrf_exempt
+def create_keycloak_user(request):
+    if request.method == "POST":
+        # Get the admin token from Keycloak
+        K_id = get_admin_token()  
+        print("get id :", K_id)
+        
+        # Set the headers for authentication
+        headers = {"Authorization": f"Bearer {K_id}", "Content-Type": "application/json"}
+        
+        # Parse the JSON data from the request body
+        try:
+            data = json.loads(request.body)  # Correct way to parse incoming JSON data
+        except json.JSONDecodeError:
+            return JsonResponse({"error": "Invalid JSON data"}, status=400)
+
+        # Prepare the payload for the new user creation
+        user_payload = {
+            "username": data.get("username"),
+            "email": data.get("email"),
+            "firstName": data.get("firstName", "DefaultFirstName"),  # Optional field: Add first name
+            "lastName": data.get("lastName", "DefaultLastName"),  # Optional field: Add last name
+            "enabled": True,
+            "credentials": [{
+                "type": "password",
+                "value": data.get("password"),
+                "temporary": False  # Set to False if you do not want the password to be temporary
+            }]
+        }
+        
+        print("user_payload :", user_payload)
+        
+        # Make the request to Keycloak's user creation endpoint
+        response = requests.post(
+            f"{settings.KEYCLOAK_URL}/admin/realms/{settings.KEYCLOAK_REALM}/users",
+            headers=headers,
+            json=user_payload  # Send the payload as JSON
+        )
+        print("response :", response)
+
+        
+        # Check the response status code and return appropriate response
+        if response.status_code == 201:
+            return JsonResponse({"message": "User created successfully in Keycloak"}, status=201)
+        else:
+            # Print response for debugging
+            print("Error response:", response.text)
+            return JsonResponse({"error": "Failed to create user", "details": response.text}, status=response.status_code)
+
 
 
 

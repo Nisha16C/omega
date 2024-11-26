@@ -15,6 +15,11 @@ class KeycloakUser(models.Model):
     
     def __str__(self):
         return self.username
+    
+    @property
+    def is_authenticated(self):         
+        """All instances of KeycloakUser are considered authenticated."""
+        return True
 
 class Agent(models.Model):
     host_name = models.CharField(max_length=255, unique=True)  
