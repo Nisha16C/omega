@@ -18,6 +18,8 @@ urlpatterns = [
     path('agents/<int:pk>/', AgentAPIView.as_view(), name='agent_detail'),  # Retrieve, Update & Delete
     path('users/', UserListAPIView.as_view(), name='user_list'),
     path('create-keycloak-user/', views.create_keycloak_user, name='create_keycloak_user'),
+    path('update-user/', UpdateKeycloakUserAPIView.as_view(), name='update-keycloak-user'),
+
 
 ]
 

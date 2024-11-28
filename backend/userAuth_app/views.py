@@ -26,10 +26,10 @@ from .models import KeycloakUser
 from rest_framework.permissions import AllowAny
 from .models import Agent
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from .models import KeycloakUser
+from django.contrib.auth.hashers import make_password
+
 
 
 
@@ -63,8 +63,6 @@ def save_keycloak_user(request):
         # Extract nested data from 'A1' and 'A2'
         user_data = request.data.get('A1')
         token_data = request.data.get('A2')
-        print("user_data", user_data)
-        print("token_data", token_data)
 
 
         # Ensure that 'A1' and 'A2' data exist
@@ -84,7 +82,6 @@ def save_keycloak_user(request):
         # Process the data (assuming KeycloakUser model)
         user, created = KeycloakUser.objects.update_or_create(
             keycloak_id=user_data['id'],
-            # print("keycloak_id :", keycloak_id),
             defaults={
                 'username': user_data['userName'],
                 'access_token': token_data['value'],
@@ -95,7 +92,6 @@ def save_keycloak_user(request):
 
             }
         )
-        print("User saved:", user)
 
         return Response({
             "message": "User saved successfully" if created else "User updated successfully",
@@ -147,9 +143,7 @@ class AgentAPIView(APIView):
         Handle POST requests to create a new Agent.
         """
         data = request.data
-        print("data",data)
         keycloak_id = data.get('keycloak_id')
-        print("keycloak_id",keycloak_id)
 
         keycloak_user = get_object_or_404(KeycloakUser, keycloak_id=keycloak_id)
         data['keycloak_user'] = keycloak_user.id  # Replace keycloak_id with the actual user ID
@@ -186,6 +180,98 @@ class AgentAPIView(APIView):
 
 
 
+from rest_framework.response import Response
+from rest_framework import status
+from .models import KeycloakUser
+from keycloak import KeycloakAdmin
+from django.core.exceptions import ObjectDoesNotExist
+
+# Initialize KeycloakAdmin
+keycloak_admin = KeycloakAdmin(
+    server_url="https://10.0.34.141:8443",
+    username="nisha",
+    password="linux",
+    realm_name="master",
+    client_id="omega",
+    verify=False,  # Set to False if using a self-signed certificate
+)
+
+class UpdateKeycloakUserAPIView(APIView):
+    def post(self, request):
+        data = request.data
+
+        # Extract data from the request
+        keycloak_id = data.get("keycloak_id")
+        username = data.get("username")
+        nickname = data.get("nickname")
+        email = data.get("email")
+        roles = data.get("roles", [])
+        password = data.get("password")
+
+        if not keycloak_id:
+            return Response({"error": "keycloak_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            # Step 1: Fetch and update user in Keycloak
+            keycloak_user = keycloak_admin.get_user(user_id=keycloak_id)
+            if not keycloak_user:
+                return Response({"error": "User not found in Keycloak"}, status=status.HTTP_404_NOT_FOUND)
+
+            # Update user data in Keycloak
+            update_data = {
+                "username": username,
+                "email": email,
+                "firstName": nickname,
+                "lastName": nickname,
+                "enabled": True,
+            }
+
+            if password:
+                update_data["credentials"] = [{"value": password, "type": "password", "temporary": False}]
+
+            keycloak_admin.update_user(user_id=keycloak_id, payload=update_data)
+
+            # Update roles in Keycloak
+            if roles:
+                keycloak_admin.update_user_roles(user_id=keycloak_id, client_id="<CLIENT_ID>", roles=roles)
+
+            # Step 2: Update user in Django DB
+            keycloak_user_obj, created = KeycloakUser.objects.update_or_create(
+                keycloak_id=keycloak_id,
+                defaults={
+                    "username": username,
+                    "email": email,
+                    "nickname": nickname,
+                    "roles": roles,
+                },
+            )
+            if password:
+                # Optionally update password hash if stored locally
+                keycloak_user_obj.access_token = keycloak_admin.token
+                keycloak_user_obj.save()
+
+            return Response(
+                {
+                    "message": "User updated successfully",
+                    "keycloak_updated": True,
+                    "created": created,
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        except ObjectDoesNotExist:
+            return Response(
+                {"error": "User does not exist in Keycloak or Django"}, 
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        except Exception as e:
+            return Response(
+                {"error": str(e)}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
+
 def get_admin_token():
     url = f"{settings.KEYCLOAK_URL}/realms/{settings.KEYCLOAK_REALM}/protocol/openid-connect/token"
     data = {
@@ -194,7 +280,6 @@ def get_admin_token():
         "username": "admin",  # Replace with your Keycloak admin username
         "password": "admin"   # Replace with your Keycloak admin password
     }
-    print("get data :", data)
     response = requests.post(url, data=data)
     return response.json().get("keycloak_id")
 
@@ -205,7 +290,6 @@ def create_keycloak_user(request):
     if request.method == "POST":
         # Get the admin token from Keycloak
         K_id = get_admin_token()  
-        print("get id :", K_id)
         
         # Set the headers for authentication
         headers = {"Authorization": f"Bearer {K_id}", "Content-Type": "application/json"}
@@ -230,7 +314,6 @@ def create_keycloak_user(request):
             }]
         }
         
-        print("user_payload :", user_payload)
         
         # Make the request to Keycloak's user creation endpoint
         response = requests.post(
@@ -238,18 +321,13 @@ def create_keycloak_user(request):
             headers=headers,
             json=user_payload  # Send the payload as JSON
         )
-        print("response :", response)
 
         
         # Check the response status code and return appropriate response
         if response.status_code == 201:
             return JsonResponse({"message": "User created successfully in Keycloak"}, status=201)
         else:
-            # Print response for debugging
-            print("Error response:", response.text)
             return JsonResponse({"error": "Failed to create user", "details": response.text}, status=response.status_code)
-
-
 
 
 
@@ -272,9 +350,7 @@ class UserRegistrationView(APIView):
 class UserLoginView(ObtainAuthToken):
     def post(self, request, *args, **kwargs):
         username = request.data.get('username')
-        print(username)
         password = request.data.get('password')
-        print(f'{username} and {password}')
         user = authenticate(request, username=username, password=password)
         if user is not None:
             login(request, user)
@@ -291,11 +367,8 @@ class UserLogoutView(APIView):
     authentication_classes = [TokenAuthentication]
     def post(self, request):
         # Access the authenticated user
-        print("logout trigger")
         user = request.user
-        print("User:", user.username)  # Print the username
         token_key = request.auth.key
         token = Token.objects.get(key=token_key)
-        print(token)
         token.delete()
         return Response({'detail': 'Successfully logged out.'})

@@ -13,7 +13,7 @@
 </template>
 
 <script setup>
-const username = 'Aastha Gupta'; // Replace with your actual data source
+const username = 'Nisha Chaurasiya'; // Replace with your actual data source
 </script>
 
 <style scoped>

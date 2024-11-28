@@ -7,7 +7,6 @@ class KeycloakIDAuthentication(BaseAuthentication):
     def authenticate(self, request):
         # Get the keycloak_id from the headers
         keycloak_id = request.headers.get('Keycloak-ID')
-        print("keycloak_id :", keycloak_id)
         if not keycloak_id:
             return None  # No authentication header provided, proceed to next authentication class
         try:

@@ -1,152 +1,156 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useMessage } from 'naive-ui'
+import { ref, onMounted } from 'vue'
+import { useMessage, useUpload } from 'naive-ui'
 import axios from 'axios'
 import { useAuthStore } from '@/store'
-import {BASE_URL_1} from "../../api-config.js";
-
+import { BASE_URL } from '/home/ubuntu/omega-code/frontend/api-config.js'
 
 const authStore = useAuthStore()
 const { userInfo } = authStore
 
 // Form references and values
 const formRef = ref()
+const isLoading = ref(false)
+const message = useMessage()
+
+// User profile data
+const userProfile = ref({
+  id: '',
+  username: '',
+  nickname: '',
+  email: '',
+  role: '',
+  avatar: '',
+})
+
+// Form values initialized from `userProfile`
 const formValue = ref({
-  user: {
-    name: '',
-    age: '',
-  },
+  name: '',
   Nickname: '',
   email: '',
   password: '',
 })
-const isLoading = ref(false)
-const message = useMessage()
 
-// Validation rules
-const rules = {
-  user: {
-    name: {
-      required: true,
-      message: 'Please enter a name',
-      trigger: 'blur',
-    },
-    age: {
-      required: true,
-      message: 'Please enter an age',
-      trigger: ['input', 'blur'],
-    },
-  },
-  Nickname: {
-    required: true,
-    message: 'Please enter a nickname',
-    trigger: ['input'],
-  },
-  email: {
-    required: true,
-    message: 'Please enter an email',
-    trigger: ['input', 'blur'],
-  },
-  password: {
-    required: true,
-    message: 'Please enter a password',
-    trigger: 'blur',
-  },
-}
-
-// Function to create user in your system (e.g., using your Django API)
-async function createUser(userData) {
+// Function to fetch user profile data
+async function fetchUserProfile() {
   try {
-    // Send the form data to the backend API (replace this URL with your actual user creation API)
-    const response = await axios.post(`${BASE_URL_1}/api/v6/create-keycloak-user/`, userData, {
+    const response = await axios.get(`${BASE_URL}/api/v1/user-profile/${userInfo?.id}/`, {
       headers: {
-        'Authorization': `Bearer ${authStore.token}`,  // Include the token for authentication if required
-        'Content-Type': 'application/json',
-      }
+        Authorization: `Bearer ${authStore.token}`,
+      },
     })
-    if (response.status === 201) {
-      message.success("User created successfully")
-      // Optionally clear the form after success
+    if (response.status === 200) {
+      const data = response.data
+      userProfile.value = data
       formValue.value = {
-        user: { name: '', age: '' },
-        Nickname: '',
-        email: '',
-        password: '',
+        name: data.username,
+        Nickname: data.nickname,
+        email: data.email,
+        password: '', // Leave password blank for security
       }
     }
   } catch (error) {
-    console.error("Error creating user:", error)
-    message.error("Failed to create user")
-  } finally {
-    isLoading.value = false
+    console.error('Error fetching user profile:', error)
+    message.error('Failed to fetch user profile')
   }
 }
 
-// Handle form validation and submission
+// Function to update profile picture
+async function updateProfilePicture(file) {
+  const formData = new FormData()
+  formData.append('avatar', file)
+
+  try {
+    const response = await axios.post(
+      `${BASE_URL}/api/v1/user-profile/${userProfile.value.id}/upload-avatar/`,
+      formData,
+      {
+        headers: {
+          Authorization: `Bearer ${authStore.token}`,
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    )
+    if (response.status === 200) {
+      userProfile.value.avatar = response.data.avatar
+      message.success('Profile picture updated successfully')
+    }
+  } catch (error) {
+    console.error('Error updating profile picture:', error)
+    message.error('Failed to update profile picture')
+  }
+}
+
+// Trigger file upload dialog on avatar click
+function handleAvatarClick() {
+  const input = document.createElement('input')
+  input.type = 'file'
+  input.accept = 'image/*'
+  input.addEventListener('change', (event) => {
+    const file = event.target.files?.[0]
+    if (file) {
+      updateProfilePicture(file)
+    }
+  })
+  input.click()
+}
+
+// Handle form submission
 function handleValidateClick() {
   formRef.value?.validate((errors) => {
     if (!errors) {
-      const userData = {
-        username: formValue.value.user.name,
-        email: formValue.value.email,
-        nickname: formValue.value.Nickname,
-        age: formValue.value.user.age,
-        password: formValue.value.password,
-        enabled: true,  // Assuming you want to activate the user immediately
-      }
-      isLoading.value = true
-      createUser(userData)
+      updateUserProfile()
     } else {
       message.error('Validation failed')
     }
   })
 }
+
+// Fetch the user profile data on component mount
+onMounted(fetchUserProfile)
 </script>
 
 <template>
   <n-space vertical>
+    <!-- User Management Section -->
     <n-card title="User Management">
-      <n-space size="large">
-        <n-avatar round :size="128" :src="userInfo?.avatar" />
-
-        <n-descriptions label-placement="left" :column="2" :title="`Good evening, ${userInfo?.nickname}`">
-          <n-descriptions-item label="ID">
-            {{ userInfo?.id }}
-          </n-descriptions-item>
-          <n-descriptions-item label="Username">
-            {{ userInfo?.userName }}
-          </n-descriptions-item>
-          <n-descriptions-item label="Real Name">
-            {{ userInfo?.nickname }}
-          </n-descriptions-item>
-          <n-descriptions-item label="Role">
-            {{ userInfo?.role }}
-          </n-descriptions-item>
+      <n-space size="large" align="center">
+        <n-avatar
+          round
+          :size="128"
+          :src="userProfile?.avatar || ''"
+          @click="handleAvatarClick"
+          class="avatar-clickable"
+        />
+        <n-descriptions label-placement="left" :column="2" :title="`Hello, ${userProfile?.nickname || 'Guest'}`">
+          <n-descriptions-item label="ID">{{ userProfile?.id }}</n-descriptions-item>
+          <n-descriptions-item label="Username">{{ userProfile?.username }}</n-descriptions-item>
+          <n-descriptions-item label="Nickname">{{ userProfile?.nickname }}</n-descriptions-item>
+          <n-descriptions-item label="Email">{{ userProfile?.email }}</n-descriptions-item>
+          <n-descriptions-item label="Role">{{ userProfile?.role }}</n-descriptions-item>
         </n-descriptions>
       </n-space>
     </n-card>
 
-    <n-card title="Create New User">
+    <!-- Edit User Profile Section -->
+    <n-card title="Edit User Profile">
       <n-space justify="center">
-        <n-form ref="formRef" class="w-500px" :label-width="100" :model="formValue" :rules="rules">
-          <n-form-item label="Name" path="user.name">
-            <n-input v-model:value="formValue.user.name" placeholder="Enter username" />
+        <n-form ref="formRef" class="w-500px" :label-width="100" :model="formValue">
+          <n-form-item label="Name">
+            <n-input v-model:value="formValue.name" placeholder="Enter username" />
           </n-form-item>
-          <n-form-item label="Age" path="user.age">
-            <n-input v-model:value="formValue.user.age" placeholder="Enter age" />
-          </n-form-item>
-          <n-form-item label="Nick Name" path="Nickname">
+          <n-form-item label="Nick Name">
             <n-input v-model:value="formValue.Nickname" placeholder="Enter your nickname" />
           </n-form-item>
-          <n-form-item label="Email" path="email">
+          <n-form-item label="Email">
             <n-input v-model:value="formValue.email" type="email" placeholder="Enter email" />
           </n-form-item>
-          <n-form-item label="Password" path="password">
+          <n-form-item label="Password">
             <n-input v-model:value="formValue.password" type="password" placeholder="Enter password" />
           </n-form-item>
           <n-form-item>
             <n-button type="primary" :loading="isLoading" block @click="handleValidateClick">
-              Create New User
+              Save Changes
             </n-button>
           </n-form-item>
         </n-form>
@@ -158,5 +162,19 @@ function handleValidateClick() {
 <style scoped>
 .w-500px {
   width: 500px;
+}
+
+.avatar-clickable {
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+.avatar-clickable:hover {
+  transform: scale(1.1);
+}
+
+@media (max-width: 600px) {
+  .w-500px {
+    width: 90%;
+  }
 }
 </style>
