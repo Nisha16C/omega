@@ -3,7 +3,7 @@ import axios from "axios"; // Import axios for HTTP requests
 import { BASE_URL , KEYCLOAK_URL} from "/home/ubuntu/omega-code/frontend/api-config.js";
 
 const keycloakConfig = {
-  url: `${KEYCLOAK_URL}`, // Replace with your Keycloak server URL
+  url: "https://10.0.34.141:8443", // Replace with your Keycloak server URL
   realm: "nisha-omega",
   clientId: "omega",
 };

@@ -1,3 +1,4 @@
+
 export const staticRoutes: AppRoute.RowRoute[] = [
   {
     name: 'homeCenter',

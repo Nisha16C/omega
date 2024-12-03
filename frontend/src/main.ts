@@ -6,7 +6,10 @@ import { installPinia } from '@/store';
 import AppVue from './App.vue';
 import AppLoading from './components/common/AppLoading.vue';
 import keycloak, { initializeKeycloak } from './plugins/keycloak';
- 
+
+import 'uno.css';
+
+
 async function setupApp() {
   // Show loading animation during initialization
   const appLoading = createApp(AppLoading);
