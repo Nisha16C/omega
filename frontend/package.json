@@ -62,7 +62,7 @@
     "radash": "^12.1.0",
     "vue": "^3.5.1",
     "vue-draggable-plus": "^0.5.3",
-    "vue-i18n": "^9.14.0",
+    "vue-i18n": "^9.14.3",
     "vue-router": "^4.4.3"
   },
   "devDependencies": {
